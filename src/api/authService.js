@@ -3,7 +3,7 @@ import apiClient from '../services/apiClient';
 // name, email, password, passwordRepeat, role, profilePictureUrl, phoneNumber
 export const registerUser = async (userData) => {
   try {
-    const response = await apiClient.post('/register', userData);
+    const response = await apiClient.post('/api/v1/register', userData);
     return response.data;
 
   } catch (error) {
@@ -14,7 +14,7 @@ export const registerUser = async (userData) => {
 
 export const loginUser = async (credentials) => {
   try {
-    const response = await apiClient.post('/login', credentials);
+    const response = await apiClient.post('/api/v1/login', credentials);
     return response.data;
 
   } catch (error) {

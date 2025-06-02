@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// const BASE_URL = 'https://travel-journal-api-bootcamp.do.dibimbing.id'; 
+// const BASE_URL = 'http://localhost:4000/api/v1'; 
 // const API_KEY = '24405e01-fbc1-45a5-9f5a-be13afcd757c';
 
 // const apiClient = axios.create({
