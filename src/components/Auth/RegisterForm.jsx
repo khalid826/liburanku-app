@@ -48,7 +48,7 @@ const RegisterForm = () => {
 
     const success = await register(apiPayload);
     if (success) {
-      // AuthContext handles navigation to login
+      navigate('/login');
     }
   };
 

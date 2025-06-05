@@ -1,30 +1,31 @@
 import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-
-import ErrorMessage from '../UI/ErrorMessage';
-import Loader from '../UI/Loader';
+import { useAuth } from '../../context/AuthContext'; // Already imported in App.jsx
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react'; 
+import ErrorMessage from '../UI/ErrorMessage'; 
+import Loader from '../UI/Loader'; 
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login, loading, error, setError } = useAuth(); // Get login function and state from context
+  const { login, loading, error, setError } = useAuth(); 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null); // Clear previous errors
-
     if (!email || !password) {
-        setError("Email and password are required.");
-        return;
-    }
+      setError("Email and password are required.");
+      return;
+  }
 
-    const success = await login(email, password);
-    if (success) {
-      navigate('/');
+  const result = await login(email, password);
+    if (result.success) {
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true }); // ✅ only navigate here
+    } else {
+      setError(result.error);
     }
   };
 
@@ -32,20 +33,17 @@ const LoginForm = () => {
     <div className="max-w-md mx-auto mt-10 bg-white p-8 border border-gray-200 rounded-lg shadow-lg">
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Login</h2>
       {error && <ErrorMessage message={error} onClose={() => setError(null)} />}
-
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="email-login" className="block text-sm font-medium text-gray-700 mb-1">
             Email address
           </label>
-
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Mail className="h-5 w-5 text-gray-400" />
             </div>
-
             <input
-              id="email"
+              id="email-login"
               name="email"
               type="email"
               autoComplete="email"
@@ -59,17 +57,15 @@ const LoginForm = () => {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="password-login" className="block text-sm font-medium text-gray-700 mb-1">
             Password
           </label>
-
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Lock className="h-5 w-5 text-gray-400" />
             </div>
-
             <input
-              id="password"
+              id="password-login"
               name="password"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
@@ -79,15 +75,14 @@ const LoginForm = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
-
           </div>
         </div>
 
@@ -101,7 +96,6 @@ const LoginForm = () => {
           </button>
         </div>
       </form>
-
       <p className="mt-6 text-center text-sm text-gray-600">
         Not a member?{' '}
         <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">

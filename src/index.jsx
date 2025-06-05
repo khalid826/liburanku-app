@@ -1,13 +1,13 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import ReactDOM from 'react-dom/client';
+import App from './App';
 import { BrowserRouter } from 'react-router-dom';
-import App from './App.jsx'
-import './styles/index.css'
+import { AuthProvider } from './context/AuthContext';
+import './styles/index.css'; // Ensure global styles are imported
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <BrowserRouter>
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <BrowserRouter>
+    <AuthProvider>
       <App />
-    </BrowserRouter>
-  </StrictMode>,
-)
+    </AuthProvider>
+  </BrowserRouter>
+);
