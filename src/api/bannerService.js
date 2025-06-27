@@ -10,3 +10,33 @@ export const getBanners = async () => {
     throw error.response?.data || error;
   }
 };
+
+export const createBanner = async (bannerData) => {
+  try {
+    const response = await apiClient.post('/api/v1/create-banner', bannerData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating banner:', error.response?.data || error.message);
+    throw error.response?.data || error;
+  }
+};
+
+export const updateBanner = async (bannerId, bannerData) => {
+  try {
+    const response = await apiClient.post(`/api/v1/update-banner/${bannerId}`, bannerData);
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating banner ${bannerId}:`, error.response?.data || error.message);
+    throw error.response?.data || error;
+  }
+};
+
+export const deleteBanner = async (bannerId) => {
+  try {
+    const response = await apiClient.delete(`/api/v1/delete-banner/${bannerId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deleting banner ${bannerId}:`, error.response?.data || error.message);
+    throw error.response?.data || error;
+  }
+};
