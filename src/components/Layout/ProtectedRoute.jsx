@@ -1,9 +1,10 @@
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import Loader from '../../components/UI/Loader';
+import { USER_ROLES } from '../../utils/constants';
 
-const ProtectedRoute = ({ children }) => {
-  const { token, loading } = useAuth();
+const ProtectedRoute = ({ children, requireAdmin = false }) => {
+  const { token, user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -19,11 +20,19 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
+  // Check if admin role is required but user is not admin
+  if (requireAdmin && user?.role !== USER_ROLES.ADMIN) {
+    return (
+      <Navigate to="/" replace />
+    );
+  }
+
   return children;
 };
 
 ProtectedRoute.defaultProps = {
-  children: null, // Default to null if no children are provided
+  children: null,
+  requireAdmin: false,
 };
 
 export default ProtectedRoute;

@@ -1,216 +1,273 @@
-import { useEffect, useState as useStateProfile } from 'react'; 
-import { useAuth as useAuthProfile } from '../../context/AuthContext'; // Aliased
-import { authService as authServiceProfile } from '../../api'; 
-import Loader from '../../components/UI/Loader'; // Already imported
-import ErrorMessage from '../../components/UI/ErrorMessage'; // Already imported
-import { UserCircle as UserCircleIcon, Mail as MailIconProfile, Phone as PhoneIconProfile, Edit3, Image as ImageIconProfile } from 'lucide-react'; 
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
+import { userService } from '../../api';
+import Breadcrumb from '../../components/Common/Breadcrumb';
+import Loader from '../../components/UI/Loader';
+import ErrorMessage from '../../components/UI/ErrorMessage';
+import ImageUploader from '../../components/UI/ImageUploader';
+import { User, Mail, Phone, Camera, Save, Edit, X } from 'lucide-react';
 
 const ProfilePage = () => {
-  const { user: authUser, token, setUser: setAuthUser, loading: authLoadingHook } = useAuthProfile(); // Renamed loading
-  const [profileData, setProfileData] = useStateProfile(null);
-  const [loading, setLoading] = useStateProfile(true); // Page specific loading
-  const [error, setError] = useStateProfile(null);
-  const [isEditing, setIsEditing] = useStateProfile(false);
-  const [editFormData, setEditFormData] = useStateProfile({
-    name: '',
-    email: '', 
-    phoneNumber: '',
-    profilePictureUrl: '',
+  const { user, setUser } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phoneNumber: user?.phoneNumber || '',
+    profilePictureUrl: user?.profilePictureUrl || '',
+    dateOfBirth: user?.dateOfBirth || '',
+    address: user?.address || ''
   });
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      // Use authUser from context if available and not empty
-      if (authUser && Object.keys(authUser).length > 0 && token) {
-        setProfileData(authUser);
-        setEditFormData({
-            name: authUser.name || '',
-            email: authUser.email || '',
-            phoneNumber: authUser.phoneNumber || '',
-            profilePictureUrl: authUser.profilePictureUrl || '',
-        });
-        setLoading(false);
-      } else if (token) { 
-        try {
-          setLoading(true); // Set loading true before fetch
-          setError(null); // Clear previous errors
-          const response = await authServiceProfile.getLoggedUser();
-          if (response && response.data) {
-            setProfileData(response.data);
-            setAuthUser(response.data); 
-            setEditFormData({
-                name: response.data.name || '',
-                email: response.data.email || '',
-                phoneNumber: response.data.phoneNumber || '',
-                profilePictureUrl: response.data.profilePictureUrl || '',
-            });
-          } else {
-            setError("Could not fetch profile data. Response was empty.");
-          }
-        } catch (err) {
-          setError(err.message || "Failed to load profile.");
-          console.error("Profile fetch error:", err);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-         setLoading(false); 
-      }
-    };
-
-    if(!authLoadingHook) { 
-        fetchUserProfile();
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phoneNumber: user.phoneNumber || '',
+        profilePictureUrl: user.profilePictureUrl || '',
+        dateOfBirth: user.dateOfBirth || '',
+        address: user.address || ''
+      });
     }
-  }, [authUser, token, setAuthUser, authLoadingHook]);
+  }, [user]);
 
-  const handleEditChange = (e) => {
-    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleUpdateProfile = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
+
     try {
-        // Email is part of the payload for update-profile endpoint as per Postman
-        const payload = {
-            name: editFormData.name,
-            email: editFormData.email, // Keep email, even if read-only in form, API might need it
-            phoneNumber: editFormData.phoneNumber,
-            profilePictureUrl: editFormData.profilePictureUrl,
-        };
-        const response = await authServiceProfile.updateProfile(payload); 
-        
-        // Assuming API returns the updated user object or a success message
-        // If it returns the updated user:
-        if (response && response.data) {
-            setProfileData(response.data);
-            setAuthUser(response.data); 
-        } else {
-            // If API only returns success message, merge local changes and re-fetch or trust local
-            const locallyUpdatedUser = { ...profileData, ...editFormData };
-            setProfileData(locallyUpdatedUser);
-            setAuthUser(locallyUpdatedUser);
-        }
-        alert(response.message || "Profile updated successfully!"); 
+      const response = await userService.updateProfile(formData);
+      if (response && response.data) {
+        setUser(response.data); // Update user in context
+        setSuccess('Profile updated successfully!');
         setIsEditing(false);
+      } else {
+        throw new Error('Failed to update profile');
+      }
     } catch (err) {
-        setError(err.message || "Failed to update profile.");
+      setError(err.message || 'Failed to update profile');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
-  
-  if (authLoadingHook || loading) return <div className="flex justify-center items-center h-64"><Loader /></div>;
-  if (error) return <ErrorMessage message={error} onClose={() => setError(null)} />;
-  if (!profileData && !token) return <p className="text-center text-gray-600 py-10">Please log in to view your profile.</p>;
-  if (!profileData && token) return <p className="text-center text-gray-600 py-10">Could not load profile data. Please try refreshing.</p>;
 
+  const handleCancel = () => {
+    setFormData({
+      name: user?.name || '',
+      email: user?.email || '',
+      phoneNumber: user?.phoneNumber || '',
+      profilePictureUrl: user?.profilePictureUrl || '',
+      dateOfBirth: user?.dateOfBirth || '',
+      address: user?.address || ''
+    });
+    setIsEditing(false);
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, profilePictureUrl: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  if (!user) {
+    return <div className="flex justify-center items-center min-h-screen"><Loader /></div>;
+  }
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 bg-white p-6 sm:p-8 border border-gray-200 rounded-lg shadow-xl">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">My Profile</h2>
-        {!isEditing && profileData && ( // Ensure profileData exists before showing edit button
-             <button 
-                onClick={() => setIsEditing(true)}
-                className="flex items-center text-blue-600 hover:text-blue-800 transition-colors px-3 py-1.5 rounded-md border border-blue-600 hover:bg-blue-50"
-            >
-                <Edit3 size={18} className="mr-1" /> Edit
-            </button>
+    <div className="container mx-auto px-4 py-4 sm:py-8">
+      {/* Breadcrumb */}
+      <Breadcrumb />
+      
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="flex items-center justify-center mb-3 sm:mb-4">
+            <User size={36} className="sm:w-12 sm:h-12 text-[#0B7582] mr-3 sm:mr-4" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Profile</h1>
+          </div>
+          <p className="text-base sm:text-lg text-gray-600">
+            Manage your account information and preferences
+          </p>
+        </div>
+
+        {error && <ErrorMessage message={error} onClose={() => setError(null)} />}
+        {success && (
+          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+            {success}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex justify-center items-center min-h-[400px]">
+            <Loader />
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+            {/* Profile Header */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 mb-6 sm:mb-8">
+              {/* Profile Picture */}
+              <div className="relative">
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-gray-200">
+                  {user?.profilePicture ? (
+                    <img
+                      src={user.profilePicture}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://placehold.co/128x128/EBF4FF/76A9FA?text=User';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                      <User size={48} className="text-gray-400" />
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => document.getElementById('profile-picture-input').click()}
+                  className="absolute bottom-0 right-0 bg-[#0B7582] text-white p-2 rounded-full hover:bg-[#095e68] transition-colors"
+                >
+                  <Camera size={16} />
+                </button>
+                <input
+                  id="profile-picture-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePictureChange}
+                  className="hidden"
+                />
+              </div>
+
+              {/* User Info */}
+              <div className="flex-1 text-center sm:text-left">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+                  {user?.name || 'User Name'}
+                </h2>
+                <p className="text-gray-600 mb-2">{user?.email}</p>
+                <p className="text-sm text-gray-500">
+                  Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                </p>
+              </div>
+
+              {/* Edit Button */}
+              <div className="flex space-x-2">
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={handleSubmit}
+                      disabled={loading}
+                      className="flex items-center px-4 py-2 bg-[#0B7582] text-white rounded-lg hover:bg-[#095e68] disabled:opacity-50 transition-colors text-sm sm:text-base"
+                    >
+                      {loading ? (
+                        <Loader size="sm" />
+                      ) : (
+                        <>
+                          <Save size={16} className="sm:w-4 sm:h-4 mr-2" />
+                          Save
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                    >
+                      <X size={16} className="sm:w-4 sm:h-4 mr-2" />
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="flex items-center px-4 py-2 bg-[#0B7582] text-white rounded-lg hover:bg-[#095e68] transition-colors text-sm sm:text-base"
+                  >
+                    <Edit size={16} className="sm:w-4 sm:h-4 mr-2" />
+                    Edit Profile
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Profile Form */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                <input
+                  type="text"
+                  value={formData.name || ''}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  disabled={!isEditing}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B7582] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm sm:text-base"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={formData.email || ''}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  disabled={!isEditing}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B7582] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm sm:text-base"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                <input
+                  type="tel"
+                  value={formData.phoneNumber || ''}
+                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                  disabled={!isEditing}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B7582] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm sm:text-base"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                <input
+                  type="date"
+                  value={formData.dateOfBirth || ''}
+                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                  disabled={!isEditing}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B7582] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm sm:text-base"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                <textarea
+                  value={formData.address || ''}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  disabled={!isEditing}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B7582] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm sm:text-base"
+                />
+              </div>
+            </div>
+          </div>
         )}
       </div>
-
-      {isEditing ? (
-        <form onSubmit={handleUpdateProfile} className="space-y-6">
-            <div>
-                <label htmlFor="name-edit" className="block text-sm font-medium text-gray-700">Name</label>
-                <div className="relative mt-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <UserCircleIcon className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input type="text" name="name" id="name-edit" value={editFormData.name} onChange={handleEditChange} className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                </div>
-            </div>
-            <div>
-                <label htmlFor="email-edit-profile" className="block text-sm font-medium text-gray-700">Email</label>
-                 <div className="relative mt-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <MailIconProfile className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input type="email" name="email" id="email-edit-profile" value={editFormData.email} onChange={handleEditChange} className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 sm:text-sm cursor-not-allowed" readOnly/>
-                    <p className="mt-1 text-xs text-gray-500">Email cannot be changed through this form.</p>
-                </div>
-            </div>
-            <div>
-                <label htmlFor="phoneNumber-edit" className="block text-sm font-medium text-gray-700">Phone Number</label>
-                <div className="relative mt-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <PhoneIconProfile className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input type="tel" name="phoneNumber" id="phoneNumber-edit" value={editFormData.phoneNumber} onChange={handleEditChange} className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                </div>
-            </div>
-            <div>
-                <label htmlFor="profilePictureUrl-edit" className="block text-sm font-medium text-gray-700">Profile Picture URL</label>
-                <div className="relative mt-1">
-                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <ImageIconProfile className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input type="url" name="profilePictureUrl" id="profilePictureUrl-edit" value={editFormData.profilePictureUrl} onChange={handleEditChange} className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                </div>
-            </div>
-            <div className="flex justify-end space-x-3 pt-2">
-                <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Cancel
-                </button>
-                <button type="submit" disabled={loading} className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
-                    {loading ? <Loader size="sm" /> : 'Save Changes'}
-                </button>
-            </div>
-        </form>
-      ) : profileData ? ( // Ensure profileData exists before rendering display
-        <div className="space-y-6">
-            <div className="flex flex-col items-center justify-center mb-6">
-            <img 
-                src={profileData.profilePictureUrl || `https://placehold.co/150x150/EBF4FF/76A9FA?text=${profileData.name ? profileData.name.charAt(0).toUpperCase() : 'U'}`} 
-                alt="Profile" 
-                className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover shadow-md border-2 border-gray-200"
-                onError={(e) => { e.target.onerror = null; e.target.src=`https://placehold.co/150x150/EBF4FF/76A9FA?text=${profileData.name ? profileData.name.charAt(0).toUpperCase() : 'U'}`; }}
-            />
-            <h3 className="mt-4 text-xl font-semibold text-gray-800">{profileData.name || 'User Name'}</h3>
-            </div>
-            <div className="border-t border-gray-200 pt-6 space-y-4">
-                <div className="flex items-start">
-                    <MailIconProfile className="h-5 w-5 text-indigo-500 mr-3 mt-1 flex-shrink-0" />
-                    <div>
-                        <h4 className="text-sm font-medium text-gray-500">Email Address</h4>
-                        <p className="mt-0.5 text-md text-gray-900 break-all">{profileData.email}</p>
-                    </div>
-                </div>
-                <div className="flex items-start">
-                    <PhoneIconProfile className="h-5 w-5 text-indigo-500 mr-3 mt-1 flex-shrink-0" />
-                     <div>
-                        <h4 className="text-sm font-medium text-gray-500">Phone Number</h4>
-                        <p className="mt-0.5 text-md text-gray-900">{profileData.phoneNumber || 'Not Provided'}</p>
-                    </div>
-                </div>
-                <div className="flex items-start">
-                    <UserCircleIcon className="h-5 w-5 text-indigo-500 mr-3 mt-1 flex-shrink-0" />
-                    <div>
-                        <h4 className="text-sm font-medium text-gray-500">Role</h4>
-                        <p className="mt-0.5 text-md text-gray-900 capitalize">{profileData.role || 'User'}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-      ) : null } {/* Render nothing if profileData is null and not editing */}
     </div>
   );
-};
-
-ProfilePage.defaultProps = {
-  user: null, // Default to null if no user is provided
 };
 
 export default ProfilePage;

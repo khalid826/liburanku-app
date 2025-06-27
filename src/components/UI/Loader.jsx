@@ -1,4 +1,4 @@
-const Loader = ({ size = 'md', color = 'border-blue-500' }) => {
+const Loader = ({ size = 'md', color = 'border-[#0B7582]' }) => {
   const sizeClasses = {
     sm: 'h-5 w-5', // Slightly smaller for inline use
     md: 'h-10 w-10', // Adjusted for better visual balance

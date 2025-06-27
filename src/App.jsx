@@ -1,63 +1,215 @@
-import { Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import React from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
-
-import Navbar from './components/Layout/Navbar';
-import Footer from './components/Layout/Footer';
+import { AppProvider } from './context/AppContext';
+import { NotificationProvider } from './context/NotificationContext';
 import ProtectedRoute from './components/Layout/ProtectedRoute';
+import Navbar from './components/Layout/Navbar';
+import WhatsAppButton from './components/Common/WhatsAppButton';
+import Footer from './components/Layout/Footer';
+import ScrollDirectionButton from './components/Common/ScrollDirectionButton';
 
+// Public Pages
 import HomePage from './pages/Public/HomePage';
+import ActivityPage from './pages/Public/ActivityPage';
+import CategoryPage from './pages/Public/CategoryPage';
+import ActivityDetailPage from './pages/Public/ActivityDetailPage';
+import SearchResultsPage from './pages/Public/SearchResultsPage';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ErrorPage from './pages/ErrorPage';
+import CategoryDetailPage from './pages/Public/CategoryDetailPage';
+
+// User Pages
 import ProfilePage from './pages/User/ProfilePage';
-import CategoryPage from './pages/Public/CategoryPage';
-import ActivityDetailPage from './pages/Public/ActivityDetailPage';
 import CartPage from './pages/User/CartPage';
+import CheckoutPage from './pages/User/CheckoutPage';
+import TransactionPage from './pages/User/TransactionPage';
+import TransactionDetailPage from './pages/User/TransactionDetailPage';
 
-const AppRoutes = () => (
-  <Routes>
-    {/* Public Routes */}
-    <Route path="/" element={<HomePage />} />
-    <Route path="/login" element={<LoginPage />} />
-    <Route path="/register" element={<RegisterPage />} />
-    <Route path="/category/:categoryId" element={<CategoryPage />} />
-    <Route path="/activity/:activityId" element={<ActivityDetailPage />} />
+// Admin Pages
+import Dashboard from './pages/Admin/Dashboard';
+import ActivityManager from './pages/Admin/ActivityManager';
+import CategoryManager from './pages/Admin/CategoryManager';
+import BannerManager from './pages/Admin/BannerManager';
+import PromoManager from './pages/Admin/PromoManager';
+import TransactionManager from './pages/Admin/TransactionManager';
+import AdminTransactionDetailPage from './pages/Admin/TransactionDetailPage';
+import UserManager from './pages/Admin/UserManager';
 
-    {/* Protected Routes */}
-    <Route
-      path="/profile"
-      element={
-        <ProtectedRoute>
-          <ProfilePage />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/cart"
-      element={
-        <ProtectedRoute>
-          <CartPage />
-        </ProtectedRoute>
-      }
-    />
+// Conditional Navbar Component
+function NavbarWrapper() {
+  const { user } = useAuth();
+  const location = useLocation();
+  if (location.pathname.startsWith('/admin')) {
+    return null;
+  }
+  return <Navbar />;
+}
 
-    {/* 404 */}
-    <Route path="*" element={<NotFoundPage />} />
-  </Routes>
-);
+// Conditional Footer Component
+function FooterWrapper() {
+  const location = useLocation();
+  if (location.pathname.startsWith('/admin')) {
+    return null;
+  }
+  return <Footer />;
+}
+
+// Conditional WhatsApp Button Component
+function WhatsAppButtonWrapper() {
+  const location = useLocation();
+  if (location.pathname.startsWith('/admin')) {
+    return null;
+  }
+  return <WhatsAppButton />;
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pathname]);
+  return null;
+}
+
+function AppContent() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <ScrollToTop />
+      {/* Conditional Navbar Rendering */}
+      <NavbarWrapper />
+      
+      {/* Main Content */}
+      <main className="pt-0">
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/activities" element={<ActivityPage />} />
+          <Route path="/categories" element={<CategoryPage />} />
+          <Route path="/category/:id" element={<CategoryDetailPage />} />
+          <Route path="/activity/:id" element={<ActivityDetailPage />} />
+          <Route path="/search" element={<SearchResultsPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          
+          {/* User Routes */}
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/cart" element={
+            <ProtectedRoute>
+              <CartPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/checkout" element={
+            <ProtectedRoute>
+              <CheckoutPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/transactions" element={
+            <ProtectedRoute>
+              <TransactionPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/transaction/:id" element={
+            <ProtectedRoute>
+              <TransactionDetailPage />
+            </ProtectedRoute>
+          } />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={
+            <ProtectedRoute requireAdmin>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/activities" element={
+            <ProtectedRoute requireAdmin>
+              <ActivityManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/categories" element={
+            <ProtectedRoute requireAdmin>
+              <CategoryManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/banners" element={
+            <ProtectedRoute requireAdmin>
+              <BannerManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/promos" element={
+            <ProtectedRoute requireAdmin>
+              <PromoManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/transactions" element={
+            <ProtectedRoute requireAdmin>
+              <TransactionManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/transactions/:id" element={
+            <ProtectedRoute requireAdmin>
+              <AdminTransactionDetailPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/users" element={
+            <ProtectedRoute requireAdmin>
+              <UserManager />
+            </ProtectedRoute>
+          } />
+          
+          {/* Admin 404 Route: must be before the global * route */}
+          <Route path="/admin/*" element={
+            <ProtectedRoute requireAdmin>
+              <NotFoundPage admin={true} />
+            </ProtectedRoute>
+          } />
+          
+          {/* Error Routes */}
+          <Route path="/error" element={<ErrorPage />} />
+          <Route path="/404" element={<NotFoundPage />} />
+          <Route path="/terms" element={<ErrorPage />} />
+          <Route path="/privacy" element={<ErrorPage />} />
+          <Route path="/cookies" element={<ErrorPage />} />
+          <Route path="/sitemap" element={<ErrorPage />} />
+          <Route path="/help" element={<ErrorPage />} />
+          <Route path="/faq" element={<ErrorPage />} />
+          <Route path="/refund" element={<ErrorPage />} />
+          <Route path="/about" element={<ErrorPage />} />
+          <Route path="/contact" element={<ErrorPage />} />
+          <Route path="*" element={<Navigate to="/404" replace />} />
+        </Routes>
+      </main>
+      
+      {/* Footer - Only show on public/user pages */}
+      <FooterWrapper />
+      
+      {/* WhatsApp Button - Only show on public/user pages */}
+      <WhatsAppButtonWrapper />
+      
+      {/* Floating Scroll Direction Button */}
+      <ScrollDirectionButton />
+    </div>
+  );
+}
 
 function App() {
   return (
-    <CartProvider>
-      <div className="flex flex-col min-h-screen font-sans">
-        <Navbar />
-        <main className="flex-grow container mx-auto px-4 py-8">
-          <AppRoutes />
-        </main>
-        <Footer />
-      </div>
-    </CartProvider>
+    <AuthProvider>
+      <NotificationProvider>
+        <CartProvider>
+          <AppProvider>
+            <AppContent />
+          </AppProvider>
+        </CartProvider>
+      </NotificationProvider>
+    </AuthProvider>
   );
 }
 
