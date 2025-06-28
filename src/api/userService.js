@@ -10,6 +10,36 @@ export const getAllUsers = async () => {
   }
 };
 
+export const getUserById = async (userId) => {
+  try {
+    const response = await apiClient.get(`/api/v1/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching user ${userId}:`, error.response?.data || error.message);
+    throw error.response?.data || error;
+  }
+};
+
+export const createUser = async (userData) => {
+  try {
+    const response = await apiClient.post('/api/v1/register', userData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating user:', error.response?.data || error.message);
+    throw error.response?.data || error;
+  }
+};
+
+export const updateUser = async (userId, userData) => {
+  try {
+    const response = await apiClient.put(`/api/v1/update-user/${userId}`, userData);
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating user ${userId}:`, error.response?.data || error.message);
+    throw error.response?.data || error;
+  }
+};
+
 export const updateUserRole = async (userId, role) => {
   try {
     const response = await apiClient.post(`/api/v1/update-user-role/${userId}`, { role });

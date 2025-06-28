@@ -1,6 +1,8 @@
 // src/pages/Admin/ActivityManager.jsx
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
 import { activityService, categoryService } from '../../api'; // Assuming these are named exports or an object
 import AdminLayout from '../../components/Layout/AdminLayout';
 import Loader from '../../components/UI/Loader';
@@ -27,11 +29,15 @@ import {
 import { Link } from 'react-router-dom';
 import { DEFAULT_CURRENCY } from '../../utils/constants';
 import ActivityForm from '../../components/Activity/ActivityForm';
+import { calculateActivityPrices } from '../../utils/helpers';
 
 const ITEMS_PER_PAGE = 10; // Constant for pagination items per page
 
 const ActivityManager = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  const { showSuccess } = useNotification();
   const [activities, setActivities] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,13 +51,18 @@ const ActivityManager = () => {
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activityToDeleteId, setActivityToDeleteId] = useState(null);
-  const [showActivityModal, setShowActivityModal] = useState(false);
-  const [editingActivity, setEditingActivity] = useState(null);
-  const [formLoading, setFormLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
-  }, []);
+    
+    // Check for success message from create/edit pages
+    const message = location.state?.message;
+    if (message) {
+      showSuccess(message);
+      // Clear the state to prevent showing the message again
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.pathname]);
 
   const fetchData = async () => {
     try {
@@ -136,38 +147,6 @@ const ActivityManager = () => {
 
   const paginatedActivities = filteredActivities.slice(startIndex, endIndex);
 
-  const openCreateModal = () => {
-    setEditingActivity(null);
-    setShowActivityModal(true);
-  };
-  const openEditModal = (activity) => {
-    setEditingActivity(activity);
-    setShowActivityModal(true);
-  };
-  const closeActivityModal = () => {
-    setShowActivityModal(false);
-    setEditingActivity(null);
-    setFormLoading(false);
-  };
-
-  const handleActivityFormSubmit = async (data) => {
-    setFormLoading(true);
-    try {
-      if (editingActivity) {
-        // Update
-        await activityService.updateActivity(editingActivity.id, data);
-      } else {
-        // Create
-        await activityService.createActivity(data);
-      }
-      await fetchData();
-      closeActivityModal();
-    } catch (err) {
-      setError('Failed to save activity');
-      setFormLoading(false);
-    }
-  };
-
   if (loading) {
     return (
       <AdminLayout title="Activity Manager">
@@ -191,7 +170,7 @@ const ActivityManager = () => {
 
       {/* Top Bar: Add New + Export Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 mt-4">
-        <Button onClick={openCreateModal} variant="primary" size="md" className="flex items-center gap-2">
+        <Button onClick={() => navigate('/admin/activities/create')} variant="primary" size="md" className="flex items-center gap-2">
           <Plus size={18} /> Add New Activity
         </Button>
         <div className="flex flex-row gap-2 sm:justify-end">
@@ -275,12 +254,18 @@ const ActivityManager = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div className="flex flex-col">
-                      <PriceDisplay amount={activity.price} currency={DEFAULT_CURRENCY} size="sm" />
-                      {activity.price_discount && activity.price_discount < activity.price && (
-                        <span className="text-xs text-gray-500">
-                          (Disc. <PriceDisplay amount={activity.price_discount} currency={DEFAULT_CURRENCY} size="xs" />)
-                        </span>
-                      )}
+                      {(() => {
+                        const { displayPrice, originalPrice } = calculateActivityPrices(activity);
+                        return (
+                          <PriceDisplay 
+                            amount={displayPrice} 
+                            originalAmount={originalPrice}
+                            currency={DEFAULT_CURRENCY} 
+                            size="sm"
+                            showDiscount={true}
+                          />
+                        );
+                      })()}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -298,7 +283,7 @@ const ActivityManager = () => {
                       <Button
                         variant="warning"
                         size="sm"
-                        onClick={() => openEditModal(activity)}
+                        onClick={() => navigate(`/admin/activities/${activity.id}/edit`)}
                       >
                         <Edit size={14} />
                       </Button>
@@ -355,21 +340,6 @@ const ActivityManager = () => {
             </Button>
           </div>
         </div>
-      </Modal>
-
-      {/* Create/Edit Activity Modal */}
-      <Modal
-        isOpen={showActivityModal}
-        onClose={closeActivityModal}
-        title={editingActivity ? 'Edit Activity' : 'Add New Activity'}
-        size="lg"
-      >
-        <ActivityForm
-          initialValues={editingActivity}
-          categories={categories}
-          onSubmit={handleActivityFormSubmit}
-          loading={formLoading}
-        />
       </Modal>
     </AdminLayout>
   );

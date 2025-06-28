@@ -68,3 +68,71 @@ export const scrollToTop = (element = null) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 };
+
+/**
+ * Calculate the display price and original price for an activity
+ * @param {Object} activity - The activity object
+ * @returns {Object} - Object containing displayPrice and originalPrice
+ */
+export const calculateActivityPrices = (activity) => {
+  if (!activity) {
+    return { displayPrice: 0, originalPrice: null };
+  }
+
+  const hasDiscount = activity.price_discount && 
+                     activity.price_discount < activity.price && 
+                     activity.price_discount > 0;
+
+  return {
+    displayPrice: hasDiscount ? activity.price_discount : activity.price,
+    originalPrice: hasDiscount ? activity.price : null
+  };
+};
+
+/**
+ * Calculate the total price for a cart item (price * quantity)
+ * @param {Object} item - The cart item object
+ * @returns {Object} - Object containing displayPrice and originalPrice for the total
+ */
+export const calculateCartItemPrices = (item) => {
+  if (!item || !item.activity) {
+    return { displayPrice: 0, originalPrice: null };
+  }
+
+  const { displayPrice, originalPrice } = calculateActivityPrices(item.activity);
+  const quantity = item.quantity || 1;
+
+  return {
+    displayPrice: displayPrice * quantity,
+    originalPrice: originalPrice ? originalPrice * quantity : null
+  };
+};
+
+/**
+ * Calculate the total price for multiple cart items
+ * @param {Array} items - Array of cart items
+ * @returns {Object} - Object containing displayPrice and originalPrice for the total
+ */
+export const calculateCartTotalPrices = (items) => {
+  if (!items || items.length === 0) {
+    return { displayPrice: 0, originalPrice: null };
+  }
+
+  let totalDisplayPrice = 0;
+  let totalOriginalPrice = 0;
+  let hasOriginalPrice = false;
+
+  items.forEach(item => {
+    const { displayPrice, originalPrice } = calculateCartItemPrices(item);
+    totalDisplayPrice += displayPrice;
+    if (originalPrice) {
+      totalOriginalPrice += originalPrice;
+      hasOriginalPrice = true;
+    }
+  });
+
+  return {
+    displayPrice: totalDisplayPrice,
+    originalPrice: hasOriginalPrice ? totalOriginalPrice : null
+  };
+};

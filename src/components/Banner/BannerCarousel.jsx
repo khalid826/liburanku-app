@@ -110,22 +110,6 @@ const BannerCarousel = () => {
         </span>
       </button>
 
-      {/* Dots Indicator */}
-      <div className="absolute bottom-1.5 sm:bottom-6 left-1/2 -translate-x-1/2 flex space-x-1 sm:space-x-3">
-        {banners.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`w-1.5 h-1.5 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${
-              index === currentSlide
-                ? 'bg-white scale-125'
-                : 'bg-white/50 hover:bg-white/75'
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
-      </div>
-
       {/* Progress Bar */}
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
         <div

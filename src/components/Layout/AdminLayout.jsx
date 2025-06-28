@@ -32,7 +32,7 @@ const AdminLayout = ({ children, title, breadcrumbs = [] }) => {
           <div className="px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center">
-                <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h1>
               </div>
             </div>
           </div>
@@ -49,7 +49,7 @@ const AdminLayout = ({ children, title, breadcrumbs = [] }) => {
           
           {/* Page Content */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {children}
             </div>
           </div>

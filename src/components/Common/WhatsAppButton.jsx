@@ -60,10 +60,10 @@ const WhatsAppButton = () => {
       {/* Main Floating Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white rounded-full shadow-lg transition-all duration-300 transform hover:scale-110"
+        className="flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white rounded-full shadow-lg transition-all duration-300 transform hover:scale-110"
         title="Need help?"
       >
-        <MessageCircle size={28} />
+        <MessageCircle size={20} className="sm:w-7 sm:h-7" />
       </button>
     </div>
   );

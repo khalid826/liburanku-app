@@ -91,7 +91,7 @@ const PromoCodeInput = ({ onPromoApplied, onPromoRemoved, currentTotal = 0 }) =>
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg border">
+    <div className="bg-white p-4 rounded-lg">
       <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
         <Tag size={20} className="mr-2 text-green-600" />
         Promo Code
@@ -133,7 +133,7 @@ const PromoCodeInput = ({ onPromoApplied, onPromoRemoved, currentTotal = 0 }) =>
             <button
               type="submit"
               disabled={isValidating || !promoCode.trim()}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              className="px-4 py-2 bg-[#0B7582] text-white rounded-md hover:bg-[#095e68] focus:outline-none focus:ring-2 focus:ring-[#0B7582] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
               {isValidating ? (
                 <Loader size={16} className="animate-spin" />

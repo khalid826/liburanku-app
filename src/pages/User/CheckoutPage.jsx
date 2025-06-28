@@ -22,6 +22,7 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const {
     cartItems,
+    selectedItems,
     loading: cartLoading,
     error: cartError,
     appliedPromo,
@@ -47,6 +48,9 @@ const CheckoutPage = () => {
   const [errors, setErrors] = useState({});
 
   const totalAmount = calculateTotal();
+
+  // Get selected cart items for checkout
+  const selectedCartItems = cartItems.filter(item => selectedItems.includes(item.id));
 
   const handlePromoApplied = (promoData) => {
     applyPromoCode(promoData);
@@ -96,7 +100,7 @@ const CheckoutPage = () => {
     return <ErrorMessage message={cartError} />;
   }
 
-  if (cartItems.length === 0) {
+  if (selectedCartItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-4 sm:py-8">
         {/* Breadcrumb */}
@@ -117,15 +121,20 @@ const CheckoutPage = () => {
 
           <div className="text-center py-8 sm:py-12">
             <ShoppingCart size={64} className="sm:w-20 sm:h-20 text-gray-400 mx-auto mb-4 sm:mb-6" />
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-600 mb-3 sm:mb-4">Your cart is empty</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-600 mb-3 sm:mb-4">
+              {cartItems.length === 0 ? 'Your cart is empty' : 'No items selected for checkout'}
+            </h2>
             <p className="text-sm sm:text-base text-gray-500 mb-6 sm:mb-8">
-              Add some activities to your cart before proceeding to checkout
+              {cartItems.length === 0 
+                ? 'Add some activities to your cart before proceeding to checkout'
+                : 'Please select items from your cart before proceeding to checkout'
+              }
             </p>
             <button
               onClick={() => navigate('/cart')}
               className="inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 bg-[#0B7582] text-white font-semibold rounded-lg shadow-md hover:bg-[#095e68] transition-colors text-sm sm:text-base"
             >
-              Go to Cart
+              {cartItems.length === 0 ? 'Go to Cart' : 'Back to Cart'}
             </button>
           </div>
         </div>
@@ -212,7 +221,7 @@ const CheckoutPage = () => {
       {/* Breadcrumb */}
       <Breadcrumb />
       {/* Checkout Header */}
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center mb-3 sm:mb-4">
             <CreditCard size={36} className="sm:w-12 sm:h-12 text-[#0B7582] mr-3 sm:mr-4" />
@@ -222,9 +231,9 @@ const CheckoutPage = () => {
             Complete your booking and secure your travel experience
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left: Payment Methods */}
-          <div className="md:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             <h2 className="text-xl font-bold mb-4">Choose Payment Method</h2>
             <PaymentMethods selectedMethod={selectedPaymentMethod} onSelectMethod={setSelectedPaymentMethod} />
             {/* Special Requests and T&C */}
@@ -264,9 +273,9 @@ const CheckoutPage = () => {
             </div>
           </div>
           {/* Right: Cart Summary, Promo Code, and Pay Button */}
-          <div className="md:col-span-1">
+          <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <CartSummary />
+              <CartSummary selectedItems={selectedItems} />
               <button
                 onClick={handleCheckout}
                 disabled={loading || !formData.agreeToTerms || !selectedPaymentMethod}

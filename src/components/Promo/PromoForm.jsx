@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const defaultValues = {
   title: '',
@@ -13,6 +13,13 @@ const defaultValues = {
 const PromoForm = ({ initialValues = {}, onSubmit, loading }) => {
   const [values, setValues] = useState({ ...defaultValues, ...initialValues });
   const [errors, setErrors] = useState({});
+
+  // Update form values when initialValues change (for editing)
+  useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      setValues({ ...defaultValues, ...initialValues });
+    }
+  }, [initialValues]);
 
   const handleChange = e => {
     const { name, value } = e.target;
@@ -73,7 +80,7 @@ const PromoForm = ({ initialValues = {}, onSubmit, loading }) => {
         </div>
       </div>
       <div className="flex justify-end gap-2 mt-4">
-        <button type="submit" className="bg-yellow-600 hover:bg-yellow-700 text-white px-5 py-2 rounded font-semibold min-w-[100px]" disabled={loading}>
+        <button type="submit" className="bg-[#0B7582] hover:bg-[#095e68] text-white px-5 py-2 rounded font-semibold min-w-[100px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled={loading}>
           {loading ? 'Saving...' : 'Submit'}
         </button>
       </div>

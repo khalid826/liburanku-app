@@ -11,6 +11,16 @@ export const getBanners = async () => {
   }
 };
 
+export const getBannerById = async (bannerId) => {
+  try {
+    const response = await apiClient.get(`/api/v1/banner/${bannerId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching banner ${bannerId}:`, error.response?.data || error.message);
+    throw error.response?.data || error;
+  }
+};
+
 export const createBanner = async (bannerData) => {
   try {
     const response = await apiClient.post('/api/v1/create-banner', bannerData);

@@ -1,29 +1,59 @@
 // src/components/Activity/ActivityCard.jsx
+import React from 'react';
 import { Link as RouterLinkActivityCard } from 'react-router-dom';
-import { MapPin as MapPinIconCard } from 'lucide-react'; // StarIconCard is no longer needed directly
+import { MapPin as MapPinIconCard, Star as StarIconCard } from 'lucide-react';
 
 // Import the new components
 import PriceDisplay from '../Common/PriceDisplay'; // Fixed import path
 import Rating from '../Common/Rating'; // Fixed import path
 import { DEFAULT_CURRENCY } from '../../utils/constants';
+import { calculateActivityPrices } from '../../utils/helpers';
 
 const ActivityCard = ({ activity }) => {
-  if (!activity) return null;
+  if (!activity) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="animate-pulse">
+          <div className="h-48 bg-gray-200"></div>
+          <div className="p-4">
+            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const displayPrice = activity.price_discount && activity.price_discount < activity.price ? activity.price_discount : activity.price;
-  const originalPrice = activity.price_discount && activity.price_discount < activity.price ? activity.price : null;
+  const { displayPrice, originalPrice } = calculateActivityPrices(activity);
 
   return (
-    <RouterLinkActivityCard to={`/activity/${activity.id}`} className="block group bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
-      <div className="relative">
+    <RouterLinkActivityCard 
+      to={`/activity/${activity.id}`} 
+      className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300 hover:-translate-y-1 block"
+    >
+      {/* Image */}
+      <div className="relative h-48 overflow-hidden">
         <img
-          src={activity.imageUrls && activity.imageUrls.length > 0 ? activity.imageUrls[0] : 'https://placehold.co/600x400/EBF4FF/76A9FA?text=No+Image'}
+          src={activity.imageUrls && activity.imageUrls.length > 0 
+            ? activity.imageUrls[0] 
+            : 'https://placehold.co/400x300/EBF4FF/76A9FA?text=No+Image'
+          }
           alt={activity.title}
-          className="w-full h-40 sm:h-48 object-cover group-hover:opacity-90 transition-opacity duration-300"
-          onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/600x400/EBF4FF/76A9FA?text=No+Image'; }}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = 'https://placehold.co/400x300/EBF4FF/76A9FA?text=No+Image';
+          }}
         />
-        {/* Optional: Add a badge for discount or new item */}
+        {originalPrice && (
+          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+            {((originalPrice - displayPrice) / originalPrice * 100).toFixed(0)}% OFF
+          </div>
+        )}
       </div>
+
+      {/* Content */}
       <div className="p-3 sm:p-5 flex-grow flex flex-col justify-between">
         <div>
             <h3 className="text-sm sm:text-lg font-semibold text-gray-800 group-hover:text-[#0B7582] transition-colors mb-1 truncate" title={activity.title}>
@@ -40,23 +70,15 @@ const ActivityCard = ({ activity }) => {
             </div>
         </div>
         <div className="mt-2">
-            {/* Replaced manual price formatting with PriceDisplay component */}
+            {/* Use enhanced PriceDisplay component */}
             <PriceDisplay
               amount={displayPrice}
+              originalAmount={originalPrice}
               currency={DEFAULT_CURRENCY}
               size="lg"
               showCents={true}
+              showDiscount={true}
             />
-            {originalPrice && (
-            <span className="ml-2 text-xs sm:text-sm text-gray-400 line-through">
-                <PriceDisplay
-                  amount={originalPrice}
-                  currency={DEFAULT_CURRENCY}
-                  size="md"
-                  showCents={true}
-                />
-            </span>
-            )}
         </div>
       </div>
        <div className="p-2 sm:p-3 bg-gray-50 border-t border-gray-100 text-center">

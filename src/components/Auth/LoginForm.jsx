@@ -16,6 +16,9 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Check if form is complete
+  const isFormComplete = email.trim() && password.trim();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -119,7 +122,7 @@ const LoginForm = () => {
             <div className="pt-4">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !isFormComplete}
                 className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-[#0B7582] hover:bg-[#095e68] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0B7582] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
               >
                 {loading ? (

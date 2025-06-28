@@ -12,6 +12,7 @@ import Pagination from '../../components/UI/Pagination';
 import usePagination from '../../hooks/usePagination';
 import {
   Users,
+  Plus,
   Eye,
   Edit,
   Trash2,
@@ -38,6 +39,9 @@ const UserManager = () => {
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDeleteId, setUserToDeleteId] = useState(null);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [formLoading, setFormLoading] = useState(false);
 
   const roleOptions = [
     { value: 'all', label: 'All Roles' },
@@ -108,6 +112,40 @@ const UserManager = () => {
   const { currentPage, totalPages, startIndex, endIndex, goToPage } = usePagination(filteredUsers.length, ITEMS_PER_PAGE);
   const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
 
+  const openCreateModal = () => {
+    setEditingUser(null);
+    setShowUserModal(true);
+  };
+
+  const openEditModal = (user) => {
+    setEditingUser(user);
+    setShowUserModal(true);
+  };
+
+  const closeUserModal = () => {
+    setShowUserModal(false);
+    setEditingUser(null);
+    setFormLoading(false);
+  };
+
+  const handleUserFormSubmit = async (data) => {
+    setFormLoading(true);
+    try {
+      if (editingUser) {
+        // Update
+        await userService.updateUser(editingUser.id, data);
+      } else {
+        // Create
+        await userService.createUser(data);
+      }
+      await fetchUsers();
+      closeUserModal();
+    } catch (err) {
+      setError('Failed to save user');
+      setFormLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout title="User Manager">
@@ -132,35 +170,40 @@ const UserManager = () => {
         }}
       />
 
-      {/* Export Buttons */}
-      <div className="flex justify-end space-x-2 mb-6 mt-4">
-        <Button
-          onClick={() => exportToCSV(filteredUsers, 'users.csv')}
-          variant="success"
-          size="sm"
-          className="flex items-center"
-        >
-          <FileText size={16} className="mr-1" />
-          CSV
+      {/* Top Bar: Add New + Export Buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 mt-4">
+        <Button onClick={openCreateModal} variant="primary" size="md" className="flex items-center gap-2">
+          <Plus size={18} /> Add New User
         </Button>
-        <Button
-          onClick={() => exportToExcel(filteredUsers, 'users.xlsx', 'Users')}
-          variant="success"
-          size="sm"
-          className="flex items-center"
-        >
-          <FileSpreadsheet size={16} className="mr-1" />
-          Excel
-        </Button>
-        <Button
-          onClick={() => exportToPDF(filteredUsers, 'users.pdf', 'Users Report')}
-          variant="success"
-          size="sm"
-          className="flex items-center"
-        >
-          <FileDown size={16} className="mr-1" />
-          PDF
-        </Button>
+        <div className="flex flex-row gap-2 sm:justify-end">
+          <Button
+            onClick={() => exportToCSV(filteredUsers, 'users.csv')}
+            variant="success"
+            size="sm"
+            className="flex items-center"
+          >
+            <FileText size={16} className="mr-1" />
+            CSV
+          </Button>
+          <Button
+            onClick={() => exportToExcel(filteredUsers, 'users.xlsx', 'Users')}
+            variant="success"
+            size="sm"
+            className="flex items-center"
+          >
+            <FileSpreadsheet size={16} className="mr-1" />
+            Excel
+          </Button>
+          <Button
+            onClick={() => exportToPDF(filteredUsers, 'users.pdf', 'Users Report')}
+            variant="success"
+            size="sm"
+            className="flex items-center"
+          >
+            <FileDown size={16} className="mr-1" />
+            PDF
+          </Button>
+        </div>
       </div>
 
       {/* Users Table */}
@@ -177,6 +220,9 @@ const UserManager = () => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Phone
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Role
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created
@@ -208,6 +254,15 @@ const UserManager = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{user.phone || 'N/A'}</div>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      user.role === 'admin' 
+                        ? 'bg-purple-100 text-purple-800' 
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {user.role === 'admin' ? 'Admin' : 'User'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {new Date(user.created_at).toLocaleDateString()}
                   </td>
@@ -221,7 +276,7 @@ const UserManager = () => {
                       <Button
                         variant="warning"
                         size="sm"
-                        onClick={() => alert('Edit functionality coming soon!')}
+                        onClick={() => openEditModal(user)}
                       >
                         <Edit size={14} />
                       </Button>
@@ -279,6 +334,137 @@ const UserManager = () => {
               Delete
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Create/Edit User Modal */}
+      <Modal
+        isOpen={showUserModal}
+        onClose={closeUserModal}
+        title={editingUser ? 'Edit User' : 'Add New User'}
+        size="lg"
+      >
+        <div className="p-6">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+              name: formData.get('name'),
+              email: formData.get('email'),
+              phone: formData.get('phone'),
+              role: formData.get('role'),
+              profile_picture: formData.get('profile_picture')
+            };
+            if (!editingUser) {
+              data.password = formData.get('password');
+            }
+            handleUserFormSubmit(data);
+          }}>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  required
+                  defaultValue={editingUser?.name || ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  defaultValue={editingUser?.email || ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {!editingUser && (
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    Password *
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  defaultValue={editingUser?.phone || ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                  Role *
+                </label>
+                <select
+                  id="role"
+                  name="role"
+                  required
+                  defaultValue={editingUser?.role || 'user'}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="profile_picture" className="block text-sm font-medium text-gray-700 mb-1">
+                  Profile Picture URL
+                </label>
+                <input
+                  type="url"
+                  id="profile_picture"
+                  name="profile_picture"
+                  defaultValue={editingUser?.profile_picture || ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={closeUserModal}
+                disabled={formLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={formLoading}
+              >
+                {formLoading ? 'Saving...' : (editingUser ? 'Update User' : 'Create User')}
+              </Button>
+            </div>
+          </form>
         </div>
       </Modal>
     </AdminLayout>

@@ -39,6 +39,18 @@ import TransactionManager from './pages/Admin/TransactionManager';
 import AdminTransactionDetailPage from './pages/Admin/TransactionDetailPage';
 import UserManager from './pages/Admin/UserManager';
 
+// Admin CRUD Pages
+import ActivityCreatePage from './pages/Admin/ActivityCreatePage';
+import ActivityEditPage from './pages/Admin/ActivityEditPage';
+import CategoryCreatePage from './pages/Admin/CategoryCreatePage';
+import CategoryEditPage from './pages/Admin/CategoryEditPage';
+import BannerCreatePage from './pages/Admin/BannerCreatePage';
+import BannerEditPage from './pages/Admin/BannerEditPage';
+import PromoCreatePage from './pages/Admin/PromoCreatePage';
+import PromoEditPage from './pages/Admin/PromoEditPage';
+import UserCreatePage from './pages/Admin/UserCreatePage';
+import UserEditPage from './pages/Admin/UserEditPage';
+
 // Conditional Navbar Component
 function NavbarWrapper() {
   const { user } = useAuth();
@@ -133,9 +145,29 @@ function AppContent() {
               <ActivityManager />
             </ProtectedRoute>
           } />
+          <Route path="/admin/activities/create" element={
+            <ProtectedRoute requireAdmin>
+              <ActivityCreatePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/activities/:id/edit" element={
+            <ProtectedRoute requireAdmin>
+              <ActivityEditPage />
+            </ProtectedRoute>
+          } />
           <Route path="/admin/categories" element={
             <ProtectedRoute requireAdmin>
               <CategoryManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/categories/create" element={
+            <ProtectedRoute requireAdmin>
+              <CategoryCreatePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/categories/:id/edit" element={
+            <ProtectedRoute requireAdmin>
+              <CategoryEditPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/banners" element={
@@ -143,9 +175,29 @@ function AppContent() {
               <BannerManager />
             </ProtectedRoute>
           } />
+          <Route path="/admin/banners/create" element={
+            <ProtectedRoute requireAdmin>
+              <BannerCreatePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/banners/:id/edit" element={
+            <ProtectedRoute requireAdmin>
+              <BannerEditPage />
+            </ProtectedRoute>
+          } />
           <Route path="/admin/promos" element={
             <ProtectedRoute requireAdmin>
               <PromoManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/promos/create" element={
+            <ProtectedRoute requireAdmin>
+              <PromoCreatePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/promos/:id/edit" element={
+            <ProtectedRoute requireAdmin>
+              <PromoEditPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/transactions" element={
@@ -161,6 +213,16 @@ function AppContent() {
           <Route path="/admin/users" element={
             <ProtectedRoute requireAdmin>
               <UserManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/users/create" element={
+            <ProtectedRoute requireAdmin>
+              <UserCreatePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/users/:id/edit" element={
+            <ProtectedRoute requireAdmin>
+              <UserEditPage />
             </ProtectedRoute>
           } />
           

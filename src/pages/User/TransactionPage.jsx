@@ -5,7 +5,7 @@ import { useNotification } from '../../context/NotificationContext';
 import { transactionService } from '../../api';
 import Loader from '../../components/UI/Loader';
 import ErrorMessage from '../../components/UI/ErrorMessage';
-import { Receipt, Clock, CheckCircle, XCircle, AlertCircle, Eye, Trash2, CheckSquare, Square, Filter, Search } from 'lucide-react';
+import { Receipt, Clock, CheckCircle, XCircle, AlertCircle, Eye, Trash2, CheckSquare, Square, Filter, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { DEFAULT_CURRENCY } from '../../utils/constants';
 import TransactionCard from '../../components/Transaction/TransactionCard';
 import Breadcrumb from '../../components/Common/Breadcrumb';
@@ -23,6 +23,7 @@ const TransactionPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [sortConfig, setSortConfig] = useState({ field: 'createdAt', direction: 'desc' });
 
   const { currentPage, totalPages, goToPage, startIndex, endIndex } = usePagination(
     transactions.length, 
@@ -181,6 +182,22 @@ const TransactionPage = () => {
     }
   };
 
+  const handleSort = (field) => {
+    setSortConfig(prev => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const getSortIcon = (field) => {
+    if (sortConfig.field !== field) {
+      return <ArrowUpDown size={16} className="text-gray-400" />;
+    }
+    return sortConfig.direction === 'asc' 
+      ? <ArrowUp size={16} className="text-blue-600" />
+      : <ArrowDown size={16} className="text-blue-600" />;
+  };
+
   // Filter transactions based on search and filters
   const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = !searchTerm || 
@@ -216,8 +233,36 @@ const TransactionPage = () => {
     return matchesSearch && matchesStatus && matchesDate;
   });
 
+  // Sort filtered transactions
+  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+    let aValue = a[sortConfig.field];
+    let bValue = b[sortConfig.field];
+
+    // Handle date fields
+    if (sortConfig.field === 'createdAt') {
+      aValue = new Date(aValue);
+      bValue = new Date(bValue);
+    }
+
+    // Handle numeric fields
+    if (sortConfig.field === 'totalAmount') {
+      aValue = parseFloat(aValue) || 0;
+      bValue = parseFloat(bValue) || 0;
+    }
+
+    // Handle string fields
+    if (typeof aValue === 'string') {
+      aValue = aValue.toLowerCase();
+      bValue = bValue.toLowerCase();
+    }
+
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
   // Get paginated transactions
-  const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+  const paginatedTransactions = sortedTransactions.slice(startIndex, endIndex);
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen"><Loader /></div>;
@@ -241,12 +286,12 @@ const TransactionPage = () => {
 
         {error && <ErrorMessage message={error} onClose={() => setError(null)} />}
 
-        {/* Filters */}
+        {/* Filters and Sorting */}
         <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0">
             <div className="flex items-center space-x-2">
               <Filter size={18} className="sm:w-5 sm:h-5 text-gray-500" />
-              <span className="text-sm sm:text-base font-medium text-gray-700">Filter by:</span>
+              <span className="text-sm sm:text-base font-medium text-gray-700">Filter & Sort:</span>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
@@ -288,6 +333,35 @@ const TransactionPage = () => {
                 <option value="month">This Month</option>
                 <option value="year">This Year</option>
               </select>
+
+              {/* Sort Options */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Sort:</span>
+                <button
+                  onClick={() => handleSort('id')}
+                  className="flex items-center space-x-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                  title="Sort by ID"
+                >
+                  <span>ID</span>
+                  {getSortIcon('id')}
+                </button>
+                <button
+                  onClick={() => handleSort('createdAt')}
+                  className="flex items-center space-x-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                  title="Sort by date"
+                >
+                  <span>Date</span>
+                  {getSortIcon('createdAt')}
+                </button>
+                <button
+                  onClick={() => handleSort('totalAmount')}
+                  className="flex items-center space-x-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                  title="Sort by amount"
+                >
+                  <span>Amount</span>
+                  {getSortIcon('totalAmount')}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -17,6 +17,7 @@ import PriceDisplay from "../../components/Common/PriceDisplay";
 import Rating from "../../components/Common/Rating";
 import Button from "../../components/UI/Button"; // Import Button for the "Add to Cart" action
 import { DEFAULT_CURRENCY } from "../../utils/constants";
+import { calculateActivityPrices } from "../../utils/helpers";
 
 import { 
   ArrowLeft, 
@@ -162,14 +163,7 @@ const ActivityDetailPage = () => {
       </p>
     );
 
-  const displayPrice =
-    activity.price_discount && activity.price_discount < activity.price
-      ? activity.price_discount
-      : activity.price;
-  const originalPrice =
-    activity.price_discount && activity.price_discount < activity.price
-      ? activity.price
-      : null;
+  const { displayPrice, originalPrice } = calculateActivityPrices(activity);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -300,18 +294,16 @@ const ActivityDetailPage = () => {
                 {/* Price Card */}
                 <div className="bg-[#e6f0fd] rounded-lg p-3 sm:p-4 min-w-[150px] sm:min-w-[200px]">
                   <div className="text-center">
-                    {originalPrice && (
-                      <div className="text-xs sm:text-sm text-gray-500 line-through mb-1">
-                        <span className="font-medium">Original Price:</span>
-                        <br />
-                        <PriceDisplay amount={originalPrice} />
-                      </div>
-                    )}
                     <div className="text-xs sm:text-sm text-green-600 font-medium mb-1">
                       {originalPrice ? 'Discounted Price:' : 'Price:'}
                     </div>
                     <div className="text-lg sm:text-2xl font-bold text-[#0B7582]">
-                      <PriceDisplay amount={displayPrice} />
+                      <PriceDisplay 
+                        amount={displayPrice} 
+                        originalAmount={originalPrice}
+                        size="2xl"
+                        showDiscount={true}
+                      />
                     </div>
                     {originalPrice && (
                       <div className="text-xs text-green-600 font-medium mt-1">

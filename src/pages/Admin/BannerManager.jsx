@@ -20,20 +20,20 @@ import {
   FileSpreadsheet,
   FileDown
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import BannerForm from '../../components/Banner/BannerForm';
 
 const ITEMS_PER_PAGE = 10;
 
 const BannerManager = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     searchTerm: '',
-    dateFrom: '',
-    dateTo: '',
+    dateRange: null,
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [bannerToDeleteId, setBannerToDeleteId] = useState(null);
@@ -89,8 +89,8 @@ const BannerManager = () => {
       banner.description?.toLowerCase().includes(filters.searchTerm.toLowerCase());
 
     const bannerDate = new Date(banner.created_at);
-    const filterDateFrom = filters.dateFrom ? new Date(filters.dateFrom) : null;
-    const filterDateTo = filters.dateTo ? new Date(filters.dateTo) : null;
+    const filterDateFrom = filters.dateRange ? new Date(filters.dateRange.start) : null;
+    const filterDateTo = filters.dateRange ? new Date(filters.dateRange.end) : null;
 
     const matchesDate = (!filterDateFrom || bannerDate >= filterDateFrom) &&
                        (!filterDateTo || bannerDate <= filterDateTo);
@@ -102,13 +102,11 @@ const BannerManager = () => {
   const paginatedBanners = filteredBanners.slice(startIndex, endIndex);
 
   const openCreateModal = () => {
-    setEditingBanner(null);
-    setShowBannerModal(true);
+    navigate('/admin/banners/create');
   };
 
   const openEditModal = (banner) => {
-    setEditingBanner(banner);
-    setShowBannerModal(true);
+    navigate(`/admin/banners/${banner.id}/edit`);
   };
 
   const closeBannerModal = () => {
@@ -292,20 +290,6 @@ const BannerManager = () => {
             </Button>
           </div>
         </div>
-      </Modal>
-
-      {/* Banner Form Modal */}
-      <Modal
-        isOpen={showBannerModal}
-        onClose={closeBannerModal}
-        title={editingBanner ? 'Edit Banner' : 'Add New Banner'}
-        size="lg"
-      >
-        <BannerForm
-          initialValues={editingBanner}
-          onSubmit={handleBannerFormSubmit}
-          loading={formLoading}
-        />
       </Modal>
     </AdminLayout>
   );

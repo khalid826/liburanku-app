@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { User, Eye, EyeOff, Mail as MailIcon, Lock as LockIcon, Phone, Image as ImageIcon, UserPlus } from 'lucide-react';
@@ -21,6 +21,15 @@ const RegisterForm = ({ onSuccess }) => {
   const [showPasswordRepeat, setShowPasswordRepeat] = useState(false);
   const { register, loading, error, setError } = useAuth();
   const { showError, showSuccess } = useNotification();
+  const navigate = useNavigate();
+
+  // Check if required fields are complete
+  const isFormComplete = formData.name.trim() && 
+                        formData.email.trim() && 
+                        formData.password.trim() && 
+                        formData.passwordRepeat.trim() && 
+                        formData.password === formData.passwordRepeat &&
+                        formData.password.length >= 6;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -262,7 +271,7 @@ const RegisterForm = ({ onSuccess }) => {
             <div className="pt-4">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !isFormComplete}
                 className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-[#0B7582] hover:bg-[#095e68] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0B7582] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
               >
                 {loading ? (

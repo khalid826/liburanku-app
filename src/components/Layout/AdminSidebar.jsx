@@ -211,6 +211,9 @@ const AdminSidebar = () => {
           onClick={() => setIsMobileOpen(false)}
         />
       )}
+
+      {/* Mobile content spacer */}
+      <div className="lg:hidden h-16"></div>
     </>
   );
 };

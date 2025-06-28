@@ -6,6 +6,9 @@ import ErrorMessage from '../../components/UI/ErrorMessage';
 import { ArrowLeft, Receipt, Clock, CheckCircle, XCircle, AlertCircle, Upload, Eye, Trash2 } from 'lucide-react';
 import { DEFAULT_CURRENCY } from '../../utils/constants';
 import { uploadImage } from '../../api/uploadService';
+import { calculateCartItemPrices } from '../../utils/helpers';
+import PriceDisplay from '../../components/Common/PriceDisplay';
+import Breadcrumb from '../../components/Common/Breadcrumb';
 
 const TransactionDetailPage = () => {
   const { id: transactionId } = useParams();
@@ -193,20 +196,25 @@ const TransactionDetailPage = () => {
 
   return (
     <div className="container mx-auto py-8 px-4">
+      {/* Breadcrumb */}
+      <Breadcrumb />
+      
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 space-y-4 sm:space-y-0">
           <div className="flex items-center">
             <button
               onClick={() => navigate('/transactions')}
               className="flex items-center text-[#0B7582] hover:text-[#095e68] mr-4"
             >
               <ArrowLeft size={20} className="mr-2" />
-              Back to Transactions
+              <span className="hidden sm:inline">Back to Transactions</span>
+              <span className="sm:hidden">Back</span>
             </button>
-            <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-              <Receipt size={32} className="mr-3 text-[#0B7582]" />
-              Transaction Details
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center">
+              <Receipt size={24} className="mr-3 text-[#0B7582] sm:w-8 sm:h-8" />
+              <span className="hidden sm:inline">Transaction Details</span>
+              <span className="sm:hidden">Details</span>
             </h1>
           </div>
           
@@ -216,14 +224,15 @@ const TransactionDetailPage = () => {
               <button
                 onClick={handleCancelTransaction}
                 disabled={cancelling}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm sm:text-base"
               >
                 {cancelling ? (
                   <Loader size={16} className="animate-spin mr-2" />
                 ) : (
                   <Trash2 size={16} className="mr-2" />
                 )}
-                Cancel Transaction
+                <span className="hidden sm:inline">Cancel Transaction</span>
+                <span className="sm:hidden">Cancel</span>
               </button>
             )}
           </div>
@@ -236,31 +245,31 @@ const TransactionDetailPage = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
           {/* Transaction Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 space-y-4 sm:space-y-0">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-800">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
                 Transaction #{transaction.id?.slice(-8) || transaction._id?.slice(-8) || transaction.transactionId?.slice(-8) || 'N/A'}
               </h2>
-              <p className="text-gray-600">Created on {formatDate(transaction.createdAt || transaction.created_at || transaction.orderDate)}</p>
+              <p className="text-gray-600 text-sm sm:text-base">Created on {formatDate(transaction.createdAt || transaction.created_at || transaction.orderDate)}</p>
             </div>
             <div className="flex items-center space-x-3">
               {getStatusIcon(transaction.status)}
-              <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(transaction.status)}`}>
+              <span className={`px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium ${getStatusColor(transaction.status)}`}>
                 {transaction.status || 'Unknown'}
               </span>
             </div>
           </div>
 
           {/* Transaction Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div>
               <h3 className="font-semibold text-gray-700 mb-3">Transaction Information</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Amount:</span>
-                  <p className="font-medium text-lg">
+                  <span className="text-gray-600 text-sm sm:text-base">Total Amount:</span>
+                  <p className="font-medium text-base sm:text-lg">
                     {transaction.totalAmount?.toLocaleString('id-ID', { 
                       style: 'currency', 
                       currency: DEFAULT_CURRENCY,
@@ -270,17 +279,17 @@ const TransactionDetailPage = () => {
                   </p>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Payment Method:</span>
-                  <span>{transaction.payment_method?.name || transaction.paymentMethod?.name || transaction.paymentMethodId || 'N/A'}</span>
+                  <span className="text-gray-600 text-sm sm:text-base">Payment Method:</span>
+                  <span className="text-sm sm:text-base">{transaction.payment_method?.name || transaction.paymentMethod?.name || transaction.paymentMethodId || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Status:</span>
-                  <span className="capitalize">{transaction.status || 'Unknown'}</span>
+                  <span className="text-gray-600 text-sm sm:text-base">Status:</span>
+                  <span className="capitalize text-sm sm:text-base">{transaction.status || 'Unknown'}</span>
                 </div>
                 {transaction.promoCode && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Promo Code:</span>
-                    <span className="text-green-600">{transaction.promoCode}</span>
+                    <span className="text-gray-600 text-sm sm:text-base">Promo Code:</span>
+                    <span className="text-green-600 text-sm sm:text-base">{transaction.promoCode}</span>
                   </div>
                 )}
               </div>
@@ -291,12 +300,12 @@ const TransactionDetailPage = () => {
               <div className="space-y-2">
                 {transaction.proofPaymentUrl && (
                   <div>
-                    <span className="text-gray-600">Payment Proof:</span>
+                    <span className="text-gray-600 text-sm sm:text-base">Payment Proof:</span>
                     <a
                       href={transaction.proofPaymentUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="ml-2 text-blue-600 hover:underline flex items-center"
+                      className="ml-2 text-blue-600 hover:underline flex items-center text-sm sm:text-base"
                     >
                       <Eye size={16} className="mr-1" />
                       View Proof
@@ -315,29 +324,37 @@ const TransactionDetailPage = () => {
             <div className="border-t pt-6">
               <h3 className="font-semibold text-gray-700 mb-4">Items</h3>
               <div className="space-y-4">
-                {transaction.transaction_items.map((item, index) => (
-                  <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                    <img 
-                      src={item.imageUrls?.[0] || 'https://placehold.co/60x60/EBF4FF/76A9FA?text=No+Image'} 
-                      alt={item.title} 
-                      className="w-16 h-16 object-cover rounded"
-                    />
-                    <div className="flex-grow">
-                      <h4 className="font-medium">{item.title || 'Unknown Activity'}</h4>
-                      <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                {transaction.transaction_items.map((item, index) => {
+                  // Create a mock cart item structure for the utility function
+                  const mockCartItem = {
+                    activity: item,
+                    quantity: item.quantity || 1
+                  };
+                  const { displayPrice, originalPrice } = calculateCartItemPrices(mockCartItem);
+                  
+                  return (
+                    <div key={index} className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-4 bg-gray-50 rounded-lg">
+                      <img 
+                        src={item.imageUrls?.[0] || 'https://placehold.co/60x60/EBF4FF/76A9FA?text=No+Image'} 
+                        alt={item.title} 
+                        className="w-16 h-16 object-cover rounded self-start sm:self-auto"
+                      />
+                      <div className="flex-grow">
+                        <h4 className="font-medium text-sm sm:text-base">{item.title || 'Unknown Activity'}</h4>
+                        <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                      </div>
+                      <div className="text-right">
+                        <PriceDisplay
+                          amount={displayPrice}
+                          originalAmount={originalPrice}
+                          currency={DEFAULT_CURRENCY}
+                          size="md"
+                          showDiscount={true}
+                        />
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        {((item.price_discount || item.price || 0) * item.quantity).toLocaleString('id-ID', { 
-                          style: 'currency', 
-                          currency: DEFAULT_CURRENCY,
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -345,9 +362,9 @@ const TransactionDetailPage = () => {
 
         {/* Upload Payment Proof Section */}
         {transaction.status?.toLowerCase() === 'pending' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-              <Upload size={24} className="mr-2 text-[#0B7582]" />
+          <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <Upload size={20} className="mr-2 text-[#0B7582] sm:w-6 sm:h-6" />
               Upload Payment Proof
             </h3>
             <div className="space-y-4">
@@ -378,13 +395,13 @@ const TransactionDetailPage = () => {
                   value={proofPaymentUrl}
                   onChange={(e) => setProofPaymentUrl(e.target.value)}
                   placeholder="Enter the URL of your payment proof (screenshot, receipt, etc.)"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                 />
               </div>
               <button
                 onClick={handleUploadProof}
                 disabled={uploading || !proofPaymentUrl.trim()}
-                className="px-4 py-2 bg-[#0B7582] text-white rounded-md hover:bg-[#095e68] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-[#0B7582] text-white rounded-md hover:bg-[#095e68] disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
                 {uploading ? <Loader size="sm" /> : 'Upload Proof'}
               </button>

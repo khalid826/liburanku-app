@@ -393,7 +393,7 @@ const HomePage = () => {
                 <img 
                   src={partner.logo} 
                   alt={`${partner.name} logo`} 
-                  className="max-w-full h-8 sm:h-12 object-contain filter grayscale group-hover:grayscale-0 transition-all duration-300"
+                  className="max-w-full h-8 sm:h-12 object-contain transition-all duration-300"
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = `https://via.placeholder.com/120x60/2563eb/ffffff?text=${partner.name.replace(' ', '+')}`;

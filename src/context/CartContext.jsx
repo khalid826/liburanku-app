@@ -2,11 +2,13 @@ import React, { createContext, useState, useEffect, useContext, useCallback } fr
 import { cartService } from '../api';
 import { useAuth as useAuthCart } from './AuthContext'; // Aliased to avoid naming conflict
 import { useNotification } from './NotificationContext';
+import { calculateCartTotalPrices } from '../utils/helpers';
 
 const CartContext = createContext(null);
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [appliedPromo, setAppliedPromo] = useState(null);
@@ -17,6 +19,7 @@ export const CartProvider = ({ children }) => {
   const fetchCart = useCallback(async () => {
     if (!token || !user) { // Only fetch if user is logged in
       setCartItems([]); // Clear cart if not logged in
+      setSelectedItems([]); // Clear selected items too
       return;
     }
     setLoading(true);
@@ -25,12 +28,16 @@ export const CartProvider = ({ children }) => {
       const response = await cartService.getCartItems();
       if (response && response.data) {
         setCartItems(response.data);
+        // Auto-select all items when cart is loaded (for checkout flow)
+        setSelectedItems(response.data.map(item => item.id));
       } else {
         setCartItems([]);
+        setSelectedItems([]);
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch cart items.');
       setCartItems([]);
+      setSelectedItems([]);
     } finally {
       setLoading(false);
     }
@@ -112,6 +119,7 @@ export const CartProvider = ({ children }) => {
   
   const clearCartLocally = () => { // For logout
     setCartItems([]);
+    setSelectedItems([]);
     setAppliedPromo(null);
     setPromoDiscount(0);
   };
@@ -138,17 +146,39 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Calculate subtotal (before promo discount)
-  const calculateSubtotal = () => {
-    return cartItems.reduce((total, item) => {
-      const price = item.activity?.price_discount < item.activity?.price 
-        ? item.activity?.price_discount 
-        : item.activity?.price;
-      return total + (price || 0) * (item.quantity || 0);
-    }, 0);
+  // Selected items management
+  const selectItem = (itemId) => {
+    setSelectedItems(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId) 
+        : [...prev, itemId]
+    );
   };
 
-  // Calculate total (after promo discount)
+  const selectAllItems = () => {
+    setSelectedItems(cartItems.map(item => item.id));
+  };
+
+  const deselectAllItems = () => {
+    setSelectedItems([]);
+  };
+
+  const toggleSelectAll = (checked) => {
+    if (checked) {
+      selectAllItems();
+    } else {
+      deselectAllItems();
+    }
+  };
+
+  // Calculate subtotal (before promo discount) - only for selected items
+  const calculateSubtotal = () => {
+    const selectedCartItems = cartItems.filter(item => selectedItems.includes(item.id));
+    const { displayPrice } = calculateCartTotalPrices(selectedCartItems);
+    return displayPrice;
+  };
+
+  // Calculate total (after promo discount) - only for selected items
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
     return Math.max(0, subtotal - promoDiscount);
@@ -168,6 +198,7 @@ export const CartProvider = ({ children }) => {
 
   const value = {
     cartItems,
+    selectedItems,
     loading,
     error,
     fetchCart,
@@ -177,6 +208,11 @@ export const CartProvider = ({ children }) => {
     cartItemCount: cartItems.reduce((count, item) => count + (item.quantity || 0), 0), // Calculate total quantity
     clearCartLocally, // Expose function to clear cart on logout
     setError, // To clear errors
+    // Selected items management
+    selectItem,
+    selectAllItems,
+    deselectAllItems,
+    toggleSelectAll,
     // Promo code functionality
     appliedPromo,
     promoDiscount,

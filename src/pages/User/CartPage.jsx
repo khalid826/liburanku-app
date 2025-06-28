@@ -1,5 +1,5 @@
 // src/pages/User/CartPage.jsx
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import CartItem from '../../components/Checkout/CartItem';
@@ -8,28 +8,28 @@ import Breadcrumb from '../../components/Common/Breadcrumb';
 import { ShoppingCart, ArrowRight } from 'lucide-react';
 
 const CartPage = () => {
-  const { cartItems, removeFromCart } = useCart();
-  const [selectedItems, setSelectedItems] = useState([]);
+  const { 
+    cartItems, 
+    removeFromCart, 
+    selectedItems, 
+    toggleSelectAll, 
+    selectItem 
+  } = useCart();
 
   const allSelected = cartItems.length > 0 && selectedItems.length === cartItems.length;
 
   const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedItems(cartItems.map(item => item.id));
-    } else {
-      setSelectedItems([]);
-    }
+    toggleSelectAll(e.target.checked);
   };
 
   const handleSelectItem = (id) => {
-    setSelectedItems(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    selectItem(id);
   };
 
   const handleDeleteSelected = async () => {
     for (const id of selectedItems) {
       await removeFromCart(id);
     }
-    setSelectedItems([]);
     window.location.reload();
   };
 
@@ -65,59 +65,70 @@ const CartPage = () => {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
             {/* Cart Items */}
-            <div className="xl:col-span-2">
+            <div className="xl:col-span-3">
               <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">
-                  Cart Items ({cartItems.length})
-                </h2>
-                {cartItems.length > 0 && (
-                  <div className="flex items-center mb-4 gap-4">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={handleSelectAll}
-                      className="form-checkbox h-4 w-4 text-[#0B7582]"
-                    />
-                    <span className="text-sm">Select All</span>
-                    <button
-                      onClick={handleDeleteSelected}
-                      disabled={selectedItems.length === 0}
-                      className="ml-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 text-sm"
-                    >
-                      Delete Selected
-                    </button>
-                  </div>
-                )}
+                {/* Cart Items Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                    Cart Items ({cartItems.length})
+                  </h2>
+                  {cartItems.length > 0 && (
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={handleSelectAll}
+                          className="form-checkbox h-4 w-4 text-[#0B7582]"
+                        />
+                        <span className="text-sm font-medium">Select All</span>
+                      </div>
+                      <button
+                        onClick={handleDeleteSelected}
+                        disabled={selectedItems.length === 0}
+                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                      >
+                        Delete Selected ({selectedItems.length})
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Cart Items List */}
                 <div className="space-y-4 sm:space-y-6">
                   {cartItems.map((item) => (
-                    <div key={item.id} className="flex items-start gap-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.includes(item.id)}
-                        onChange={() => handleSelectItem(item.id)}
-                        className="form-checkbox h-4 w-4 mt-4 text-[#0B7582]"
-                      />
-                      <div className="flex-1">
-                        <CartItem item={item} />
-                      </div>
-                    </div>
+                    <CartItem 
+                      key={item.id} 
+                      item={item} 
+                      isSelected={selectedItems.includes(item.id)}
+                      onSelect={() => handleSelectItem(item.id)}
+                    />
                   ))}
                 </div>
               </div>
             </div>
 
             {/* Cart Summary */}
-            <div className="xl:col-span-1">
+            <div className="xl:col-span-2">
               <div className="sticky top-4">
                 <CartSummary selectedItems={selectedItems} />
                 {cartItems.length > 0 && (
                   <Link
                     to="/checkout"
-                    className="block w-full mt-6 px-6 py-3 bg-[#0B7582] text-white rounded-lg font-semibold text-center hover:bg-[#095e68] transition-colors text-base"
+                    className={`block w-full mt-6 px-6 py-3 rounded-lg font-semibold text-center transition-colors text-base ${
+                      selectedItems.length > 0 
+                        ? 'bg-[#0B7582] text-white hover:bg-[#095e68]' 
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    onClick={(e) => {
+                      if (selectedItems.length === 0) {
+                        e.preventDefault();
+                      }
+                    }}
                   >
-                    Proceed to Checkout
+                    {selectedItems.length > 0 ? 'Proceed to Checkout' : 'Select items to checkout'}
                   </Link>
                 )}
               </div>

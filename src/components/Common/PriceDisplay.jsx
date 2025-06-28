@@ -12,9 +12,21 @@ import { DEFAULT_CURRENCY, CURRENCY_CONFIG } from '../../utils/constants';
  * @param {string} [props.currency='IDR'] - The currency code (e.g., 'IDR', 'USD', 'EUR').
  * @param {boolean} [props.showCents] - If true, displays decimal cents. Defaults to currency config.
  * @param {'sm' | 'md' | 'lg' | 'xl' | '2xl'} [props.size='md'] - The visual size of the price text.
+ * @param {number} [props.originalAmount] - The original amount before discount (for strikethrough display).
+ * @param {boolean} [props.showDiscount] - Whether to show discount percentage when originalAmount is provided.
+ * @param {string} [props.className] - Additional CSS classes.
  */
-const PriceDisplay = ({ amount, currency = DEFAULT_CURRENCY, showCents = null, size = 'md' }) => {
+const PriceDisplay = ({ 
+  amount, 
+  currency = DEFAULT_CURRENCY, 
+  showCents = null, 
+  size = 'md',
+  originalAmount = null,
+  showDiscount = false,
+  className = ''
+}) => {
   const numericAmount = typeof amount === 'number' ? amount : parseFloat(amount);
+  const numericOriginalAmount = originalAmount ? (typeof originalAmount === 'number' ? originalAmount : parseFloat(originalAmount)) : null;
 
   if (isNaN(numericAmount)) {
     return <span className="text-red-500">Invalid Price</span>;
@@ -35,13 +47,32 @@ const PriceDisplay = ({ amount, currency = DEFAULT_CURRENCY, showCents = null, s
     md: 'text-base',
     lg: 'text-lg',
     xl: 'text-xl',
-    '2xl': 'text-2xl font-bold', // Added a slightly bolder style for larger sizes
+    '2xl': 'text-2xl font-bold',
   };
 
+  const hasDiscount = numericOriginalAmount && numericOriginalAmount > numericAmount;
+
   return (
-    <span className={`font-semibold ${sizeClasses[size]} text-gray-900`}>
-      {formatter.format(numericAmount)}
-    </span>
+    <div className={`${className}`}>
+      {/* Main price */}
+      <span className={`font-semibold ${sizeClasses[size]} text-gray-900`}>
+        {formatter.format(numericAmount)}
+      </span>
+      
+      {/* Original price with strikethrough */}
+      {hasDiscount && (
+        <span className={`ml-2 ${sizeClasses[size]} text-gray-400 line-through`}>
+          {formatter.format(numericOriginalAmount)}
+        </span>
+      )}
+      
+      {/* Discount percentage */}
+      {hasDiscount && showDiscount && (
+        <span className="ml-2 text-xs text-green-600 font-medium">
+          -{((numericOriginalAmount - numericAmount) / numericOriginalAmount * 100).toFixed(0)}%
+        </span>
+      )}
+    </div>
   );
 };
 
@@ -50,6 +81,9 @@ PriceDisplay.propTypes = {
   currency: PropTypes.string,
   showCents: PropTypes.bool,
   size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl', '2xl']),
+  originalAmount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  showDiscount: PropTypes.bool,
+  className: PropTypes.string,
 };
 
 export default PriceDisplay;

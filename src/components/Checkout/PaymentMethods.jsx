@@ -51,20 +51,20 @@ const banks = [
 const PaymentMethods = ({ selectedMethod, onSelectMethod }) => {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {banks.map((bank) => (
           <div
             key={bank.id}
             onClick={() => onSelectMethod(bank.id)}
-            className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 flex items-center space-x-4 ${
+            className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 flex flex-col items-center text-center space-y-2 ${
               selectedMethod === bank.id
                 ? `${bank.borderColor} ${bank.bgColor} ring-2 ring-[#0B7582] ring-opacity-50`
                 : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
             }`}
           >
-            <div className="flex-1">
-              <h3 className={`font-semibold text-gray-900 text-sm sm:text-base ${bank.color}`}>{bank.name}</h3>
-              <p className="text-gray-500 text-xs sm:text-sm mt-1">{bank.description}</p>
+            <div className="flex-1 flex flex-col items-center">
+              <h3 className={`font-semibold text-gray-900 text-sm ${bank.color}`}>{bank.name}</h3>
+              <p className="text-gray-500 text-xs mt-1">{bank.description}</p>
             </div>
             {selectedMethod === bank.id && (
               <div className="absolute top-2 right-2">

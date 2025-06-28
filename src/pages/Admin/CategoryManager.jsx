@@ -20,7 +20,7 @@ import {
   FileSpreadsheet,
   FileDown
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import CategoryForm from '../../components/Category/CategoryForm';
 
 const ITEMS_PER_PAGE = 10; // Constant for pagination items per page
@@ -32,14 +32,11 @@ const CategoryManager = () => {
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     searchTerm: '',
-    dateFrom: '',
-    dateTo: '',
+    dateRange: null,
   });
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // State for delete modal
-  const [categoryToDeleteId, setCategoryToDeleteId] = useState(null); // State to hold ID of category to delete
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [formLoading, setFormLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [categoryToDeleteId, setCategoryToDeleteId] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchCategories();
@@ -66,7 +63,7 @@ const CategoryManager = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDeleteCategory = async () => { // New function to confirm deletion
+  const confirmDeleteCategory = async () => {
     if (!categoryToDeleteId) return;
 
     try {
@@ -89,8 +86,8 @@ const CategoryManager = () => {
       category.description?.toLowerCase().includes(filters.searchTerm.toLowerCase());
 
     const categoryDate = new Date(category.created_at);
-    const filterDateFrom = filters.dateFrom ? new Date(filters.dateFrom) : null;
-    const filterDateTo = filters.dateTo ? new Date(filters.dateTo) : null;
+    const filterDateFrom = filters.dateRange ? new Date(filters.dateRange.start) : null;
+    const filterDateTo = filters.dateRange ? new Date(filters.dateRange.end) : null;
 
     const matchesDate = (!filterDateFrom || categoryDate >= filterDateFrom) &&
                        (!filterDateTo || categoryDate <= filterDateTo);
@@ -103,35 +100,11 @@ const CategoryManager = () => {
   const paginatedCategories = filteredCategories.slice(startIndex, endIndex);
 
   const openCreateModal = () => {
-    setEditingCategory(null);
-    setShowCategoryModal(true);
+    navigate('/admin/categories/create');
   };
 
   const openEditModal = (category) => {
-    setEditingCategory(category);
-    setShowCategoryModal(true);
-  };
-
-  const closeCategoryModal = () => {
-    setShowCategoryModal(false);
-    setEditingCategory(null);
-    setFormLoading(false);
-  };
-
-  const handleCategoryFormSubmit = async (data) => {
-    setFormLoading(true);
-    try {
-      if (editingCategory) {
-        await categoryService.updateCategory(editingCategory.id, data);
-      } else {
-        await categoryService.createCategory(data);
-      }
-      await fetchCategories();
-      closeCategoryModal();
-    } catch (err) {
-      setError('Failed to save category');
-      setFormLoading(false);
-    }
+    navigate(`/admin/categories/${category.id}/edit`);
   };
 
   if (loading) {
@@ -291,19 +264,6 @@ const CategoryManager = () => {
             </Button>
           </div>
         </div>
-      </Modal>
-
-      <Modal
-        isOpen={showCategoryModal}
-        onClose={closeCategoryModal}
-        title={editingCategory ? 'Edit Category' : 'Add New Category'}
-        size="lg"
-      >
-        <CategoryForm
-          initialValues={editingCategory}
-          onSubmit={handleCategoryFormSubmit}
-          loading={formLoading}
-        />
       </Modal>
     </AdminLayout>
   );

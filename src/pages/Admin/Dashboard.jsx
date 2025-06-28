@@ -13,7 +13,10 @@ import {
   TrendingUp, 
   Activity,
   Settings,
-  BarChart3
+  BarChart3,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -32,6 +35,11 @@ const Dashboard = () => {
     activities: [],
     users: [],
     transactions: []
+  });
+  const [sortConfig, setSortConfig] = useState({
+    activities: { field: 'createdAt', direction: 'desc' },
+    users: { field: 'created_at', direction: 'desc' },
+    transactions: { field: 'createdAt', direction: 'desc' }
   });
 
   useEffect(() => {
@@ -79,11 +87,13 @@ const Dashboard = () => {
         categoryService.getCategories(), // still needed for stats, but ignore for latest
         transactionService.getAllTransactions()
       ]);
+      
       const getSorted = (arr, dateKey = 'createdAt', count = 3) =>
         (arr || [])
           .slice()
           .sort((a, b) => new Date(b[dateKey] || b.created_at) - new Date(a[dateKey] || a.created_at))
           .slice(0, count);
+      
       setLatest({
         activities: activitiesRes.status === 'fulfilled' ? getSorted(activitiesRes.value?.data, 'createdAt', 3) : [],
         users: usersRes.status === 'fulfilled' ? getSorted(usersRes.value?.data, 'created_at', 3) : [],
@@ -92,6 +102,54 @@ const Dashboard = () => {
     } catch (err) {
       // ignore for now
     }
+  };
+
+  const handleSort = (listType, field) => {
+    setSortConfig(prev => {
+      const current = prev[listType];
+      const newDirection = current.field === field && current.direction === 'asc' ? 'desc' : 'asc';
+      
+      return {
+        ...prev,
+        [listType]: { field, direction: newDirection }
+      };
+    });
+  };
+
+  const getSortedList = (list, listType) => {
+    const config = sortConfig[listType];
+    if (!config) return list;
+
+    return [...list].sort((a, b) => {
+      let aValue = a[config.field];
+      let bValue = b[config.field];
+
+      // Handle date fields
+      if (config.field === 'createdAt' || config.field === 'created_at') {
+        aValue = new Date(aValue || a.created_at || a.createdAt);
+        bValue = new Date(bValue || b.created_at || b.createdAt);
+      }
+
+      // Handle string fields
+      if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (aValue < bValue) return config.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return config.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const getSortIcon = (listType, field) => {
+    const config = sortConfig[listType];
+    if (config.field !== field) {
+      return <ArrowUpDown size={14} className="text-gray-400" />;
+    }
+    return config.direction === 'asc' 
+      ? <ArrowUp size={14} className="text-blue-600" />
+      : <ArrowDown size={14} className="text-blue-600" />;
   };
 
   if (loading) {
@@ -198,11 +256,27 @@ const Dashboard = () => {
                 <Activity className="h-6 w-6 text-green-600" />
                 <h3 className="font-semibold text-gray-700 text-lg">Activities</h3>
               </div>
-              <Link to="/admin/activities" className="text-xs text-green-700 font-medium hover:underline">View All</Link>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleSort('activities', 'title')}
+                  className="p-1 hover:bg-green-100 rounded transition-colors"
+                  title="Sort by name"
+                >
+                  {getSortIcon('activities', 'title')}
+                </button>
+                <button
+                  onClick={() => handleSort('activities', 'createdAt')}
+                  className="p-1 hover:bg-green-100 rounded transition-colors"
+                  title="Sort by date"
+                >
+                  {getSortIcon('activities', 'createdAt')}
+                </button>
+                <Link to="/admin/activities" className="text-xs text-green-700 font-medium hover:underline">View All</Link>
+              </div>
             </div>
             <ul className="flex-1 space-y-3">
               {latest.activities.length === 0 && <li className="text-gray-400 text-sm">No data</li>}
-              {latest.activities.map(act => (
+              {getSortedList(latest.activities, 'activities').map(act => (
                 <li key={act.id} className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 shadow border border-gray-100">
                   <div className="flex-shrink-0">
                     <div className="h-8 w-8 rounded bg-green-100 flex items-center justify-center">
@@ -224,11 +298,27 @@ const Dashboard = () => {
                 <Users className="h-6 w-6 text-[#0B7582]" />
                 <h3 className="font-semibold text-gray-700 text-lg">Users</h3>
               </div>
-              <Link to="/admin/users" className="text-xs text-[#0B7582] font-medium hover:underline">View All</Link>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleSort('users', 'name')}
+                  className="p-1 hover:bg-blue-100 rounded transition-colors"
+                  title="Sort by name"
+                >
+                  {getSortIcon('users', 'name')}
+                </button>
+                <button
+                  onClick={() => handleSort('users', 'created_at')}
+                  className="p-1 hover:bg-blue-100 rounded transition-colors"
+                  title="Sort by date"
+                >
+                  {getSortIcon('users', 'created_at')}
+                </button>
+                <Link to="/admin/users" className="text-xs text-[#0B7582] font-medium hover:underline">View All</Link>
+              </div>
             </div>
             <ul className="flex-1 space-y-3">
               {latest.users.length === 0 && <li className="text-gray-400 text-sm">No data</li>}
-              {latest.users.map(user => (
+              {getSortedList(latest.users, 'users').map(user => (
                 <li key={user.id} className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 shadow border border-gray-100">
                   <img className="h-8 w-8 rounded-full object-cover" src={user.profile_picture || 'https://placehold.co/32x32/EBF4FF/76A9FA?text=U'} alt={user.name || user.email} />
                   <div className="flex-1 min-w-0">
@@ -246,11 +336,27 @@ const Dashboard = () => {
                 <Receipt className="h-6 w-6 text-[#EF7B24]" />
                 <h3 className="font-semibold text-gray-700 text-lg">Transactions</h3>
               </div>
-              <Link to="/admin/transactions" className="text-xs text-[#EF7B24] font-medium hover:underline">View All</Link>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleSort('transactions', 'id')}
+                  className="p-1 hover:bg-orange-100 rounded transition-colors"
+                  title="Sort by ID"
+                >
+                  {getSortIcon('transactions', 'id')}
+                </button>
+                <button
+                  onClick={() => handleSort('transactions', 'createdAt')}
+                  className="p-1 hover:bg-orange-100 rounded transition-colors"
+                  title="Sort by date"
+                >
+                  {getSortIcon('transactions', 'createdAt')}
+                </button>
+                <Link to="/admin/transactions" className="text-xs text-[#EF7B24] font-medium hover:underline">View All</Link>
+              </div>
             </div>
             <ul className="flex-1 space-y-3">
               {latest.transactions.length === 0 && <li className="text-gray-400 text-sm">No data</li>}
-              {latest.transactions.map(tx => (
+              {getSortedList(latest.transactions, 'transactions').map(tx => (
                 <li key={tx.id} className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 shadow border border-gray-100">
                   <div className="flex-shrink-0">
                     <Receipt className="h-5 w-5 text-[#EF7B24]" />
